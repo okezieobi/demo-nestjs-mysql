@@ -20,6 +20,9 @@ services:
 # database data between container restarts. The `db-password` secret is used
 # to set the database password. You must create `db/password.txt` and add
 # a password of your choosing to it before running `docker-compose up`.
+    depends_on:
+      mysql:
+        condition: service_healthy
   mysql:
     image: mysql
     container_name: mysql
@@ -29,6 +32,10 @@ services:
   #    MYSQL_USER: 'root'
   #    MYSQL_PASSWORD: '12345678'
       MYSQL_ROOT_PASSWORD: '12345678'
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
     ports:
       - "3306:3306"
     volumes:
