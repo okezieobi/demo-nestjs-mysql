@@ -8,4 +8,6 @@ export class AppService {
   create(arg: unknown) {
     return arg;
   }
+
+  async insertUser(arg: unknown) {}
 }
