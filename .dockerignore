@@ -32,3 +32,4 @@
 LICENSE
 README.md
 **/test
+.eslintcache
