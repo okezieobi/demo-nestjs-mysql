@@ -12,7 +12,7 @@ import {
 import { eq } from 'drizzle-orm';
 
 import { db } from './db';
-import { insertUserSchema, selectUserSchema, User, users } from './User';
+import { insertUserSchema, selectUserSchema, users } from './User';
 
 @Controller('users')
 export class AppController {
@@ -23,7 +23,7 @@ export class AppController {
         .pick({ name: true })
         .parseAsync(body);
       try {
-        const [user]: User[] = await db
+        const [user] = await db
           .select()
           .from(users)
           .where(eq(users.name, input.name));
@@ -52,8 +52,10 @@ export class AppController {
   @Get()
   async listUsers() {
     try {
-      db.select().from(users);
+      const list = await db.select().from(users);
+      return list;
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -69,7 +71,7 @@ export class AppController {
         .pick({ id: true })
         .parseAsync({ id });
       try {
-        const [user]: User[] = await db
+        const [user] = await db
           .select()
           .from(users)
           .where(eq(users.id, input.id));
@@ -101,7 +103,7 @@ export class AppController {
         .pick({ name: true })
         .parseAsync(body);
       try {
-        const [user]: User[] = await db
+        const [user] = await db
           .select()
           .from(users)
           .where(eq(users.id, filter.id));
@@ -134,7 +136,7 @@ export class AppController {
         .pick({ id: true })
         .parseAsync({ id });
       try {
-        const [user]: User[] = await db
+        const [user] = await db
           .select()
           .from(users)
           .where(eq(users.id, filter.id));
