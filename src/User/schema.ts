@@ -1,5 +1,9 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { users } from './table';
+import { z } from 'zod';
 
 export const insertUserSchema = createInsertSchema(users);
-export const selectUserSchema = createSelectSchema(users);
+export const selectUserSchema = createSelectSchema(users, {
+  id: z.number().int(),
+  name: (schema) => schema.name,
+});
