@@ -5,7 +5,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Param,
@@ -36,7 +35,11 @@ export class AppController {
           return new ConflictException('User already exists');
         }
         await db.insert(users).values(input);
-        return HttpStatus.CREATED;
+        const [newUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.name, input.name));
+        return newUser;
       } catch (error) {
         throw new InternalServerErrorException(error);
       }
@@ -102,8 +105,13 @@ export class AppController {
             .update(users)
             .set({ name: input.name })
             .where(eq(users.id, filter.id));
+          const [updatedUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.name, input.name));
+          return updatedUser;
         }
-        return HttpStatus.OK;
+        return user;
       } catch (error) {
         throw new InternalServerErrorException(error);
       }
@@ -127,7 +135,7 @@ export class AppController {
           return new NotFoundException('user not found');
         }
         await db.delete(users).where(eq(users.id, filter.id));
-        return HttpStatus.OK;
+        return { message: 'User successfully deleted' };
       } catch (error) {
         throw new IntersectionObserver(error);
       }
