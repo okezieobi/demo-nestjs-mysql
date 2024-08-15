@@ -60,6 +60,7 @@ export class AppController {
     try {
       const input = await selectUserSchema
         .pick({ id: true })
+        .required()
         .parseAsync({ id });
       try {
         const [user] = await db
@@ -79,10 +80,11 @@ export class AppController {
   }
 
   @Patch(':id')
-  async updateUser(@Param(':id') id: string, @Body() body: unknown) {
+  async updateUser(@Param('id') id: string, @Body() body: unknown) {
     try {
       const filter = await selectUserSchema
         .pick({ id: true })
+        .required()
         .parseAsync({ id });
       const input = await insertUserSchema
         .pick({ name: true })
@@ -95,10 +97,12 @@ export class AppController {
         if (user == null) {
           return new NotFoundException('User not found');
         }
-        await db
-          .update(users)
-          .set({ name: input.name })
-          .where(eq(users.id, filter.id));
+        if (input.name != null) {
+          await db
+            .update(users)
+            .set({ name: input.name })
+            .where(eq(users.id, filter.id));
+        }
         return HttpStatus.OK;
       } catch (error) {
         throw new InternalServerErrorException(error);
@@ -109,7 +113,7 @@ export class AppController {
   }
 
   @Delete(':id')
-  async deleteUser(@Param(':id') id: string) {
+  async deleteUser(@Param('id') id: string) {
     try {
       const filter = await selectUserSchema
         .pick({ id: true })

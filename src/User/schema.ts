@@ -4,6 +4,6 @@ import { z } from 'zod';
 
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users, {
-  id: z.number().int(),
+  id: z.coerce.number().int(),
   name: (schema) => schema.name,
 });
