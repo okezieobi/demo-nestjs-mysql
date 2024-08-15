@@ -16,6 +16,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { insertUserSchema, selectUserSchema } from './User';
 import { users } from './tables';
+import { ZodError } from 'zod';
 
 @Controller('users')
 export class AppController {
@@ -26,25 +27,26 @@ export class AppController {
         .pick({ name: true })
         .required()
         .parseAsync(body);
-      try {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.name, input.name));
-        if (user) {
-          return new ConflictException('User already exists');
-        }
-        await db.insert(users).values(input);
-        const [newUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.name, input.name));
-        return newUser;
-      } catch (error) {
-        throw new InternalServerErrorException(error);
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.name, input.name));
+      if (user) {
+        throw new ConflictException('User already exists');
       }
+      await db.insert(users).values(input);
+      const [newUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.name, input.name));
+      return newUser;
     } catch (error) {
-      throw new BadRequestException(error);
+      switch (true) {
+        case error instanceof ZodError:
+          throw new BadRequestException(error);
+        default:
+          throw error;
+      }
     }
   }
 
@@ -65,20 +67,21 @@ export class AppController {
         .pick({ id: true })
         .required()
         .parseAsync({ id });
-      try {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, input.id));
-        if (user == null) {
-          return new NotFoundException('User not found');
-        }
-        return user;
-      } catch (error) {
-        throw new InternalServerErrorException(error);
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, input.id));
+      if (user == null) {
+        throw new NotFoundException('User not found');
       }
+      return user;
     } catch (error) {
-      throw new BadRequestException(error);
+      switch (true) {
+        case error instanceof ZodError:
+          throw new BadRequestException(error);
+        default:
+          throw error;
+      }
     }
   }
 
@@ -92,31 +95,32 @@ export class AppController {
       const input = await insertUserSchema
         .pick({ name: true })
         .parseAsync(body);
-      try {
-        const [user] = await db
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, filter.id));
+      if (user == null) {
+        throw new NotFoundException('User not found');
+      }
+      if (input.name != null) {
+        await db
+          .update(users)
+          .set({ name: input.name })
+          .where(eq(users.id, filter.id));
+        const [updatedUser] = await db
           .select()
           .from(users)
-          .where(eq(users.id, filter.id));
-        if (user == null) {
-          return new NotFoundException('User not found');
-        }
-        if (input.name != null) {
-          await db
-            .update(users)
-            .set({ name: input.name })
-            .where(eq(users.id, filter.id));
-          const [updatedUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.name, input.name));
-          return updatedUser;
-        }
-        return user;
-      } catch (error) {
-        throw new InternalServerErrorException(error);
+          .where(eq(users.name, input.name));
+        return updatedUser;
       }
+      return user;
     } catch (error) {
-      throw new BadRequestException(error);
+      switch (true) {
+        case error instanceof ZodError:
+          throw new BadRequestException(error);
+        default:
+          throw error;
+      }
     }
   }
 
@@ -126,21 +130,22 @@ export class AppController {
       const filter = await selectUserSchema
         .pick({ id: true })
         .parseAsync({ id });
-      try {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, filter.id));
-        if (user == null) {
-          return new NotFoundException('user not found');
-        }
-        await db.delete(users).where(eq(users.id, filter.id));
-        return { message: 'User successfully deleted' };
-      } catch (error) {
-        throw new IntersectionObserver(error);
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, filter.id));
+      if (user == null) {
+        throw new NotFoundException('user not found');
       }
+      await db.delete(users).where(eq(users.id, filter.id));
+      return { message: 'User successfully deleted' };
     } catch (error) {
-      throw new BadRequestException(error);
+      switch (true) {
+        case error instanceof ZodError:
+          throw new BadRequestException(error);
+        default:
+          throw error;
+      }
     }
   }
 }
