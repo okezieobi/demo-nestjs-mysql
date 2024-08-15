@@ -1,10 +1,13 @@
 import {
+  BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
-  HttpException,
   HttpStatus,
+  InternalServerErrorException,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -12,7 +15,8 @@ import {
 import { eq } from 'drizzle-orm';
 
 import { db } from './db';
-import { insertUserSchema, selectUserSchema, users } from './User';
+import { insertUserSchema, selectUserSchema } from './User';
+import { users } from './tables';
 
 @Controller('users')
 export class AppController {
@@ -21,6 +25,7 @@ export class AppController {
     try {
       const input = await insertUserSchema
         .pick({ name: true })
+        .required()
         .parseAsync(body);
       try {
         const [user] = await db
@@ -28,24 +33,15 @@ export class AppController {
           .from(users)
           .where(eq(users.name, input.name));
         if (user) {
-          throw new HttpException(
-            'User already exists',
-            HttpStatus.NOT_ACCEPTABLE,
-          );
+          return new ConflictException('User already exists');
         }
         await db.insert(users).values(input);
         return HttpStatus.CREATED;
       } catch (error) {
-        throw new HttpException(
-          'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
+        throw new InternalServerErrorException(error);
       }
     } catch (error) {
-      throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST, {
-        cause: error,
-      });
+      throw new BadRequestException(error);
     }
   }
 
@@ -55,12 +51,7 @@ export class AppController {
       const list = await db.select().from(users);
       return list;
     } catch (error) {
-      console.log(error);
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        { cause: error },
-      );
+      throw new InternalServerErrorException(error);
     }
   }
 
@@ -76,20 +67,14 @@ export class AppController {
           .from(users)
           .where(eq(users.id, input.id));
         if (user == null) {
-          throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+          return new NotFoundException('User not found');
         }
         return user;
       } catch (error) {
-        throw new HttpException(
-          'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
+        throw new InternalServerErrorException(error);
       }
     } catch (error) {
-      throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST, {
-        cause: error,
-      });
+      throw new BadRequestException(error);
     }
   }
 
@@ -108,7 +93,7 @@ export class AppController {
           .from(users)
           .where(eq(users.id, filter.id));
         if (user == null) {
-          throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+          return new NotFoundException('User not found');
         }
         await db
           .update(users)
@@ -116,16 +101,10 @@ export class AppController {
           .where(eq(users.id, filter.id));
         return HttpStatus.OK;
       } catch (error) {
-        throw new HttpException(
-          'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
+        throw new InternalServerErrorException(error);
       }
     } catch (error) {
-      throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST, {
-        cause: error,
-      });
+      throw new BadRequestException(error);
     }
   }
 
@@ -141,21 +120,15 @@ export class AppController {
           .from(users)
           .where(eq(users.id, filter.id));
         if (user == null) {
-          throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+          return new NotFoundException('user not found');
         }
         await db.delete(users).where(eq(users.id, filter.id));
         return HttpStatus.OK;
       } catch (error) {
-        throw new HttpException(
-          'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
+        throw new IntersectionObserver(error);
       }
     } catch (error) {
-      throw new HttpException('Validation failed', HttpStatus.BAD_REQUEST, {
-        cause: error,
-      });
+      throw new BadRequestException(error);
     }
   }
 }

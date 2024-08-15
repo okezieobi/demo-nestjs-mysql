@@ -2,10 +2,10 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import * as mysql from 'mysql2/promise';
 
 export const dbConfig = {
-  host: 'localhost',
+  database: 'dev',
+  password: 'example',
+  host: '127.0.0.1',
   user: 'root',
-  database: 'mysql',
-  password: '12345678',
 };
 
 const connection = mysql.createPool(dbConfig);
